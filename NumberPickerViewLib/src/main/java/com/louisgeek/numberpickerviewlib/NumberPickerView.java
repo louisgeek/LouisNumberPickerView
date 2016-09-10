@@ -1,14 +1,20 @@
 package com.louisgeek.numberpickerviewlib;
 
 import android.content.Context;
+import android.content.res.TypedArray;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.louisgeek.numberpickerviewlib.tools.SizeTool;
 import com.louisgeek.numberpickerviewlib.tools.StringTool;
 
 
@@ -19,8 +25,10 @@ public class NumberPickerView extends LinearLayout implements View.OnClickListen
 
     private static final String TAG = "NumberPickerView";
     private Context mContext;
-
+    private final int DEFAULT_VIEW_SIZE=28;
+    private int mViewSize=0;
     private boolean isInt=true;
+
     public void setMinAndMaxAndIncrement(double minValue,double maxValue,double increment) {
         mMinValue = minValue;
         mMaxValue = maxValue;
@@ -34,6 +42,21 @@ public class NumberPickerView extends LinearLayout implements View.OnClickListen
         mMaxValue = maxValue;
         mIncrement = increment;
         isInt=true;
+        //
+        initValue();
+    }
+
+    /**
+     * 不设置默认  true
+     * @param isInt
+     */
+    public void setIsInt(boolean isInt) {
+        if (isInt){
+            idedvalue.setInputType(InputType.TYPE_CLASS_NUMBER);
+        }else{
+            idedvalue.setInputType(InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        }
+        this.isInt = isInt;
         //
         initValue();
     }
@@ -92,6 +115,13 @@ public class NumberPickerView extends LinearLayout implements View.OnClickListen
     public NumberPickerView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         mContext = context;
+        TypedArray typedArray=context.obtainStyledAttributes(attrs,R.styleable.NumberPickerView);
+        boolean isIntFromXml=typedArray.getBoolean(R.styleable.NumberPickerView_isInt,true);
+        float incrementFromXml=typedArray.getFloat(R.styleable.NumberPickerView_increment,1);
+        mViewSize=typedArray.getDimensionPixelOffset(R.styleable.NumberPickerView_viewSize, SizeTool.dp2px(mContext,DEFAULT_VIEW_SIZE));
+        isInt=isIntFromXml;
+        mIncrement=Double.valueOf(String.valueOf(incrementFromXml));
+
         initView();
     }
 
@@ -99,8 +129,28 @@ public class NumberPickerView extends LinearLayout implements View.OnClickListen
         Log.d(TAG, "initView: ");
         View view = LayoutInflater.from(mContext).inflate(R.layout.layout_number_picker, this);
         TextView idtvadd = (TextView) view.findViewById(R.id.id_tv_add);
-         idedvalue = (EditText) view.findViewById(R.id.id_ed_value);
+        idedvalue = (EditText) view.findViewById(R.id.id_ed_value);
         TextView idtvremove = (TextView) view.findViewById(R.id.id_tv_remove);
+        Log.d(TAG, "initView: mViewSize:"+mViewSize);
+       // idtvadd.setWidth((int) mViewSize);
+        ViewGroup.LayoutParams  vlp=idtvadd.getLayoutParams();
+        vlp.width= mViewSize;
+        vlp.height=mViewSize;
+        idtvadd.setLayoutParams(vlp);
+       // idtvadd.setHeight((int) mViewSize);
+        /*idtvremove.setWidth((int) mViewSize);
+        idtvremove.setHeight((int) mViewSize);*/
+        ViewGroup.LayoutParams  vlp2=idtvremove.getLayoutParams();
+        vlp2.width=mViewSize;
+        vlp2.height= mViewSize;
+        idtvremove.setLayoutParams(vlp2);
+
+
+        ViewGroup.LayoutParams  vlp3=idedvalue.getLayoutParams();
+        vlp3.height= mViewSize;
+        //idedvalue.setHeight((int) mViewSize);
+        idedvalue.setLayoutParams(vlp3);
+
         idtvadd.setOnClickListener(this);
        // idedvalue.setOnClickListener(this);
         idtvremove.setOnClickListener(this);
@@ -119,7 +169,7 @@ public class NumberPickerView extends LinearLayout implements View.OnClickListen
         }
 
         //idedvalue.setText("111");
-     /*   idedvalue.addTextChangedListener(new TextWatcher() {
+        idedvalue.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 Log.d(TAG, "beforeTextChanged:");
@@ -134,13 +184,16 @@ public class NumberPickerView extends LinearLayout implements View.OnClickListen
             @Override
             public void afterTextChanged(Editable s) {
                 Log.d(TAG, "afterTextChanged:");
-               *//* if (mHasFocus){
-                    initValue();
-                    mHasFocus=false;
-                }*//*
+              /* if (s.toString().trim().equals("")){
+                   if (isInt){
+                    idedvalue.setText("0");
+                   }else{
+                    idedvalue.setText("0.0");
+                   }
+               }*/
                //
             }
-        });*/
+        });
     }
 
 
@@ -172,11 +225,13 @@ public class NumberPickerView extends LinearLayout implements View.OnClickListen
     }else{
         setNumberDoubleValue();
     }
+
     }
     private void  setNumberDoubleValue(){
         if (idedvalue!=null){
             if (!idedvalue.getText().equals(mNowValue)) {
             idedvalue.setText(String.valueOf(mNowValue));
+            idedvalue.setSelection(String.valueOf(mNowValue).length());
             }
         }
     }
@@ -185,6 +240,7 @@ public class NumberPickerView extends LinearLayout implements View.OnClickListen
             int nowIntValue= (int) mNowValue;
             if (!idedvalue.getText().equals(nowIntValue)) {
                 idedvalue.setText(String.valueOf(nowIntValue));
+                idedvalue.setSelection(String.valueOf(nowIntValue).length());
             }
         }
     }
